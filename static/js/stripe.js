@@ -38,8 +38,7 @@ const setupFormListeners = (stripe) => {
             const clientSecret = await fetchPaymentIntent(payload);
             await confirmPayment(stripe, clientSecret);
         } catch (err) {
-            console.error(err);
-            showCardError('Payment failed. Please try again.');
+            showCardError(err);
         } finally {
             toggleProcessingState(form, false);
         }
