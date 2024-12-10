@@ -1,0 +1,5 @@
+.air.toml
+.env
+dist/*
+tmp/*
+Makefile
