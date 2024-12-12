@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/store/internal/cards"
 )
 
@@ -60,6 +61,22 @@ func (app *application) GetPaymentIntent(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := writeJson(w, http.StatusOK, pi); err != nil {
+		app.errorLog.Println("Failed to write JSON response:", err)
+		return
+	}
+}
+
+func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	widgetID, _ := strconv.Atoi(id)
+
+	widget, err := app.repositories.Widget.GetWidgetByID(r.Context(), widgetID)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	if err := writeJson(w, http.StatusOK, widget); err != nil {
 		app.errorLog.Println("Failed to write JSON response:", err)
 		return
 	}

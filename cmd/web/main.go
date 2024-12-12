@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/mlvieira/store/internal/driver"
-	"github.com/mlvieira/store/internal/models"
+	"github.com/mlvieira/store/internal/repository"
 )
 
 const version = "1.0.0"
@@ -35,7 +35,7 @@ type application struct {
 	errorLog      *log.Logger
 	templateCache map[string]*template.Template
 	version       string
-	DB            models.DBModel
+	repositories  repository.Repositories
 }
 
 func (app *application) serve() error {
@@ -76,6 +76,11 @@ func main() {
 
 	defer conn.Close()
 
+	repositories := repository.Repositories{
+		Widget:      repository.NewWidgetRepository(conn),
+		Transaction: repository.NewTransactionRepository(conn),
+	}
+
 	tc := make(map[string]*template.Template)
 
 	app := &application{
@@ -84,7 +89,7 @@ func main() {
 		errorLog:      errorLog,
 		templateCache: tc,
 		version:       version,
-		DB:            models.DBModel{DB: conn},
+		repositories:  repositories,
 	}
 
 	err = app.serve()

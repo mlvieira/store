@@ -1,27 +1,8 @@
 package models
 
 import (
-	"context"
-	"database/sql"
 	"time"
 )
-
-// DBModel is the type for database connection
-type DBModel struct {
-	DB *sql.DB
-}
-
-// Models is the wrapper for all models
-type Models struct {
-	DB DBModel
-}
-
-// NewModels return a model type with database connection pool
-func NewModels(db *sql.DB) Models {
-	return Models{
-		DB: DBModel{DB: db},
-	}
-}
 
 // Widget is the type for all widgets (product)
 type Widget struct {
@@ -84,48 +65,4 @@ type User struct {
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
-}
-
-func (m *DBModel) GetWidget(id int) (Widget, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	var widget Widget
-
-	stmt, err := m.DB.Prepare(`
-		SELECT
-			id
-			, name
-			, description
-			, inventory_level
-			, price
-			, coalesce(image, '') as image
-			, created_at
-			, updated_at
-		FROM
-			widgets
-		WHERE
-			id = ?
-	`)
-	if err != nil {
-		return widget, err
-	}
-
-	defer stmt.Close()
-
-	row := stmt.QueryRowContext(ctx, id)
-	if err := row.Scan(
-		&widget.ID,
-		&widget.Name,
-		&widget.Description,
-		&widget.InventoryLevel,
-		&widget.Price,
-		&widget.Image,
-		&widget.CreatedAt,
-		&widget.UpdatedAt,
-	); err != nil {
-		return widget, err
-	}
-
-	return widget, nil
 }

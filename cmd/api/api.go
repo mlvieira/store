@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/mlvieira/store/internal/driver"
-	"github.com/mlvieira/store/internal/models"
+	"github.com/mlvieira/store/internal/repository"
 )
 
 const version = "1.0.0"
@@ -27,11 +27,11 @@ type config struct {
 }
 
 type application struct {
-	config   config
-	infoLog  *log.Logger
-	errorLog *log.Logger
-	version  string
-	DB       models.DBModel
+	config       config
+	infoLog      *log.Logger
+	errorLog     *log.Logger
+	version      string
+	repositories repository.Repositories
 }
 
 func (app *application) serve() error {
@@ -71,12 +71,17 @@ func main() {
 
 	defer conn.Close()
 
+	repositories := repository.Repositories{
+		Widget:      repository.NewWidgetRepository(conn),
+		Transaction: repository.NewTransactionRepository(conn),
+	}
+
 	app := &application{
-		config:   cfg,
-		infoLog:  infoLog,
-		errorLog: errorLog,
-		version:  version,
-		DB:       models.DBModel{DB: conn},
+		config:       cfg,
+		infoLog:      infoLog,
+		errorLog:     errorLog,
+		version:      version,
+		repositories: repositories,
 	}
 
 	err = app.serve()
