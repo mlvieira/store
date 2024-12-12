@@ -36,7 +36,7 @@ const setupFormListeners = (stripe) => {
             };
 
             const clientSecret = await fetchPaymentIntent(payload);
-            await confirmPayment(stripe, clientSecret);
+            await confirmPayment(stripe, clientSecret, form);
         } catch (err) {
             showCardError(err);
         } finally {
@@ -103,7 +103,7 @@ const fetchPaymentIntent = async (payload) => {
     }
 };
 
-const confirmPayment = async (stripe, clientSecret) => {
+const confirmPayment = async (stripe, clientSecret, form) => {
     const cardholderName = document.getElementById('cardholder-name').value;
 
     try {
@@ -120,6 +120,7 @@ const confirmPayment = async (stripe, clientSecret) => {
             throw new Error(result.error.message);
         } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
             processPaymentSuccess(result.paymentIntent);
+            setTimeout(() => form.submit(), 1000);
         }
     } catch (err) {
         showCardError(err.message);
