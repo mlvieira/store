@@ -23,7 +23,13 @@ type templateData struct {
 	StripePublic    string
 }
 
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+	"formatCurrency": formatCurrency,
+}
+
+func formatCurrency(n float64) string {
+	return fmt.Sprintf("$%.2f", n)
+}
 
 //go:embed templates
 var templateFS embed.FS
