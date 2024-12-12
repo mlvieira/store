@@ -28,7 +28,8 @@ var functions = template.FuncMap{
 }
 
 func formatCurrency(n float64) string {
-	return fmt.Sprintf("$%.2f", n)
+	i := n / 100
+	return fmt.Sprintf("$%.2f", i)
 }
 
 //go:embed templates
