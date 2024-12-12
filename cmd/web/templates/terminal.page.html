@@ -9,6 +9,7 @@
     <hr>
     <div class="alert alert-danger text-center d-none" id="card-messages"></div>
     <span id="stripe_public_key" class="d-none">{{.StripePublic}}</span>
+    <span id="api_url" class="d-none">{{.API}}</span>
     <form action="/payment" method="POST" name="charge_form" id="charge_form" class="d-block needs-validation charge-form"
         autocomplete="off" novalidate>
     

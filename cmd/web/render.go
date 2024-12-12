@@ -30,6 +30,7 @@ var templateFS embed.FS
 
 func (app *application) AddDefaultData(td *templateData, r *http.Request) *templateData {
 	td.StripePublic = app.config.stripe.key
+	td.API = app.config.api
 	return td
 }
 

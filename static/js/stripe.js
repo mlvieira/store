@@ -76,8 +76,13 @@ const validateAmountInput = (value) => {
 };
 
 const fetchPaymentIntent = async (payload) => {
+    const apiUrl = document.getElementById('api_url')?.innerHTML;
+    if (!apiUrl) {
+        showCardError('Failed to load API url. Please try again.');
+    }
+
     try {
-        const response = await fetch('http://localhost:4001/api/payment-intent', {
+        const response = await fetch(`${apiUrl}/api/payment-intent`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
