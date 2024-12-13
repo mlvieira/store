@@ -22,16 +22,11 @@ func main() {
 
 	defer conn.Close()
 
-	repositories := repository.Repositories{
-		Widget:      repository.NewWidgetRepository(conn),
-		Transaction: repository.NewTransactionRepository(conn),
-	}
-
 	baseApp := &application.Application{
 		Config:       cfg,
 		InfoLog:      infoLog,
 		ErrorLog:     errorLog,
-		Repositories: repositories,
+		Repositories: repository.NewRepositories(conn),
 	}
 
 	apiApp := &api.Application{Application: baseApp}

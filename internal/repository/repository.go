@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/mlvieira/store/internal/models"
 )
@@ -17,4 +18,11 @@ type TransactionRepository interface {
 type Repositories struct {
 	Widget      WidgetRepository
 	Transaction TransactionRepository
+}
+
+func NewRepositories(conn *sql.DB) *Repositories {
+	return &Repositories{
+		Widget:      NewWidgetRepository(conn),
+		Transaction: NewTransactionRepository(conn),
+	}
 }

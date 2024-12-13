@@ -13,6 +13,6 @@ type Application struct {
 	InfoLog      *log.Logger
 	ErrorLog     *log.Logger
 	Version      string
-	Repositories repository.Repositories
+	Repositories *repository.Repositories
 	Renderer     *render.Renderer
 }

@@ -24,20 +24,13 @@ func main() {
 
 	defer conn.Close()
 
-	repositories := repository.Repositories{
-		Widget:      repository.NewWidgetRepository(conn),
-		Transaction: repository.NewTransactionRepository(conn),
-	}
-
-	renderer := render.NewRenderer(cfg.Env, cfg.Stripe.Key, cfg.API, errorLog)
-
 	baseApp := &application.Application{
 		Config:       cfg,
 		InfoLog:      infoLog,
 		ErrorLog:     errorLog,
 		Version:      version,
-		Repositories: repositories,
-		Renderer:     renderer,
+		Repositories: repository.NewRepositories(conn),
+		Renderer:     render.NewRenderer(cfg.Env, cfg.Stripe.Key, cfg.API, errorLog),
 	}
 
 	webApp := &web.Application{Application: baseApp}
