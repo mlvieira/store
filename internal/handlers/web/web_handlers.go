@@ -5,19 +5,24 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mlvieira/store/internal/application"
 	"github.com/mlvieira/store/internal/render"
 )
 
-func (app *Application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
-	if err := app.Renderer.RenderTemplate(w, r, "terminal", nil); err != nil {
-		app.ErrorLog.Println(err)
+type Handlers struct {
+	App *application.Application
+}
+
+func (h *Handlers) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
+	if err := h.App.Renderer.RenderTemplate(w, r, "terminal", nil); err != nil {
+		h.App.ErrorLog.Println(err)
 	}
 }
 
-func (app *Application) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		app.ErrorLog.Println(err)
+		h.App.ErrorLog.Println(err)
 		return
 	}
 
@@ -36,30 +41,30 @@ func (app *Application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	data["pa"] = paymentAmount
 	data["pc"] = paymentCurrency
 
-	if err = app.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
+	if err = h.App.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
 		Data: data,
 	}); err != nil {
-		app.ErrorLog.Println(err)
+		h.App.ErrorLog.Println(err)
 	}
 
 }
 
-func (app *Application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
 
-	widget, err := app.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
+	widget, err := h.App.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
 	if err != nil {
-		app.ErrorLog.Println(err)
+		h.App.ErrorLog.Println(err)
 		return
 	}
 
 	data := make(map[string]any)
 	data["widget"] = widget
 
-	if err := app.Renderer.RenderTemplate(w, r, "buy-once", &render.TemplateData{
+	if err := h.App.Renderer.RenderTemplate(w, r, "buy-once", &render.TemplateData{
 		Data: data,
 	}); err != nil {
-		app.ErrorLog.Println(err)
+		h.App.ErrorLog.Println(err)
 	}
 }

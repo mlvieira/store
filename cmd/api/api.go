@@ -15,7 +15,7 @@ func main() {
 
 	infoLog, errorLog := config.NewLoggers()
 
-	conn, err := driver.OpenDB(cfg.db.dsn)
+	conn, err := driver.OpenDB(cfg.DB.DSN)
 	if err != nil {
 		errorLog.Fatal(err)
 	}

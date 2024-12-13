@@ -5,9 +5,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/mlvieira/store/internal/application"
+	"github.com/mlvieira/store/internal/handlers/api"
 )
 
-func APIRoutes(app *Application) http.Handler {
+func APIRoutes(app *application.Application) http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
@@ -18,8 +20,10 @@ func APIRoutes(app *Application) http.Handler {
 		MaxAge:           300,
 	}))
 
-	mux.Post("/api/payment-intent", app.GetPaymentIntent)
-	mux.Get("/api/widget/{id}", app.GetWidgetByID)
+	handlers := &api.Handlers{App: app}
+
+	mux.Post("/api/payment-intent", handlers.GetPaymentIntent)
+	mux.Get("/api/widget/{id}", handlers.GetWidgetByID)
 
 	return mux
 }
