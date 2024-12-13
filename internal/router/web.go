@@ -8,6 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/handlers/web"
 )
 
+// InitWebRoutes sets up the routes and handlers for the web application.
 func InitWebRoutes(app *application.Application) http.Handler {
 	mux := chi.NewRouter()
 

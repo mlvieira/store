@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Serve starts an HTTP server with the specified configuration and handler.
 func Serve(port int, env string, handler http.Handler, infoLog *log.Logger) error {
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

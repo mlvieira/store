@@ -8,6 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/repository"
 )
 
+// Application holds the core application context and dependencies.
 type Application struct {
 	Config       *config.Config
 	InfoLog      *log.Logger

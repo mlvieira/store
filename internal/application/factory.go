@@ -7,6 +7,7 @@ import (
 	"github.com/mlvieira/store/internal/repository"
 )
 
+// NewBaseApplication initializes the application with configuration, logging, and resources.
 func NewBaseApplication(version string) (*Application, func(), error) {
 	cfg := config.NewConfig()
 

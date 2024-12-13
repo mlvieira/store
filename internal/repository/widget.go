@@ -8,6 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/models"
 )
 
+// widgetRepo handles database operations for widgets.
 type widgetRepo struct {
 	db *sql.DB
 }
@@ -17,6 +18,7 @@ func NewWidgetRepository(db *sql.DB) WidgetRepository {
 	return &widgetRepo{db: db}
 }
 
+// GetWidgetByID fetches a widget by its ID.
 func (r *widgetRepo) GetWidgetByID(ctx context.Context, id int) (models.Widget, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

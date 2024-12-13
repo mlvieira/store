@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// Config holds application configuration settings.
 type Config struct {
 	Port int
 	Env  string
@@ -19,6 +20,7 @@ type Config struct {
 	}
 }
 
+// NewConfig initializes application configuration using flags and environment variables.
 func NewConfig() *Config {
 	cfg := &Config{}
 
@@ -35,6 +37,7 @@ func NewConfig() *Config {
 	return cfg
 }
 
+// NewLoggers creates info and error loggers.
 func NewLoggers() (*log.Logger, *log.Logger) {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)

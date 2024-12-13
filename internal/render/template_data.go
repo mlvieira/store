@@ -1,5 +1,6 @@
 package render
 
+// TemplateData holds dynamic data passed to templates.
 type TemplateData struct {
 	StringMap       map[string]string
 	IntMap          map[string]int

@@ -8,6 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/models"
 )
 
+// transactionRepo handles database operations for transactions.
 type transactionRepo struct {
 	db *sql.DB
 }
@@ -17,6 +18,7 @@ func NewTransactionRepository(db *sql.DB) TransactionRepository {
 	return &transactionRepo{db: db}
 }
 
+// InsertTransaction inserts a new transaction into the database.
 func (r *transactionRepo) InsertTransaction(ctx context.Context, txn models.Transaction) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

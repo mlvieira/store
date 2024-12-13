@@ -9,10 +9,12 @@ import (
 	"strings"
 )
 
+// functions defines custom template functions.
 var functions = template.FuncMap{
 	"formatCurrency": formatCurrency,
 }
 
+// formatCurrency formats a float as a currency string.
 func formatCurrency(n float64) string {
 	i := n / 100
 	return fmt.Sprintf("$%.2f", i)
@@ -23,6 +25,7 @@ func formatCurrency(n float64) string {
 //go:embed templates
 var templateFS embed.FS
 
+// Renderer manages template rendering and caching.
 type Renderer struct {
 	TemplateCache map[string]*template.Template
 	Env           string
@@ -31,6 +34,7 @@ type Renderer struct {
 	ErrorLog      *log.Logger
 }
 
+// NewRenderer initializes a Renderer with caching and configuration.
 func NewRenderer(env, stripeKey, api string, errorLog *log.Logger) *Renderer {
 	return &Renderer{
 		TemplateCache: make(map[string]*template.Template),
@@ -41,12 +45,14 @@ func NewRenderer(env, stripeKey, api string, errorLog *log.Logger) *Renderer {
 	}
 }
 
+// AddDefaultData adds default data like Stripe key and API URL to templates.
 func (r *Renderer) AddDefaultData(td *TemplateData, req *http.Request) *TemplateData {
 	td.StripePublic = r.StripeKey
 	td.API = r.API
 	return td
 }
 
+// RenderTemplate renders a template with the provided data and optional partials.
 func (r *Renderer) RenderTemplate(w http.ResponseWriter, req *http.Request, page string, td *TemplateData, partials ...string) error {
 	var t *template.Template
 	var err error
@@ -80,6 +86,7 @@ func (r *Renderer) RenderTemplate(w http.ResponseWriter, req *http.Request, page
 	return nil
 }
 
+// parseTemplate parses and caches a template with optional partials.
 func (r *Renderer) parseTemplate(partials []string, page, templateToRender string) (*template.Template, error) {
 	var t *template.Template
 	var err error

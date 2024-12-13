@@ -9,6 +9,7 @@ import (
 	"github.com/mlvieira/store/internal/handlers/api"
 )
 
+// InitAPIRoutes sets up the routes and handlers for the API.
 func InitAPIRoutes(app *application.Application) http.Handler {
 	mux := chi.NewRouter()
 

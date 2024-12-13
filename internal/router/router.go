@@ -20,6 +20,7 @@ func InitRouter(app *application.Application, mode string) (http.Handler, error)
 	}
 }
 
+// Serve initializes and starts the HTTP server using the shared Serve logic.
 func Serve(app *application.Application, router http.Handler) error {
 	return shared.Serve(
 		app.Config.Port,

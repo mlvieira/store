@@ -5,12 +5,14 @@ import (
 	"github.com/stripe/stripe-go/v81/paymentintent"
 )
 
+// Card represents payment card details for transactions.
 type Card struct {
 	Secret   string
 	Key      string
 	Currency string
 }
 
+// Transaction represents a financial transaction record.
 type Transaction struct {
 	TransactionStatusID int
 	Amount              int
@@ -19,10 +21,12 @@ type Transaction struct {
 	BankReturnCode      string
 }
 
+// Charge creates a payment intent for a specified currency and amount.
 func (c *Card) Charge(currency string, amount float64) (*stripe.PaymentIntent, string, error) {
 	return c.CreatePaymentIntent(currency, amount)
 }
 
+// CreatePaymentIntent generates a Stripe payment intent for a given currency and amount.
 func (c *Card) CreatePaymentIntent(currency string, amount float64) (*stripe.PaymentIntent, string, error) {
 	stripe.Key = c.Secret
 
@@ -44,6 +48,7 @@ func (c *Card) CreatePaymentIntent(currency string, amount float64) (*stripe.Pay
 	return pi, "", nil
 }
 
+// cardErrorMessage maps Stripe error codes to user-friendly error messages.
 func cardErrorMessage(code stripe.ErrorCode) string {
 	var msg = ""
 	switch code {

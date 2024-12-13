@@ -9,16 +9,19 @@ import (
 	"github.com/mlvieira/store/internal/render"
 )
 
+// Handlers provides methods to handle web and API requests.
 type Handlers struct {
 	App *application.Application
 }
 
+// VirtualTerminal renders the virtual terminal page.
 func (h *Handlers) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	if err := h.App.Renderer.RenderTemplate(w, r, "terminal", nil); err != nil {
 		h.App.ErrorLog.Println(err)
 	}
 }
 
+// PaymentSucceeded processes payment success and renders a success page.
 func (h *Handlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -49,6 +52,7 @@ func (h *Handlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// ChargeOnce renders the widget purchase page for a single charge.
 func (h *Handlers) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
