@@ -10,10 +10,12 @@ import (
 	"github.com/mlvieira/store/internal/cards"
 )
 
+// Handlers provides methods to handle web and API requests.
 type Handlers struct {
 	App *application.Application
 }
 
+// GetPaymentIntent creates a Stripe payment intent and returns it as JSON.
 func (h *Handlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
@@ -52,6 +54,7 @@ func (h *Handlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, pi, h.App.ErrorLog)
 }
 
+// GetWidgetByID fetches a widget by its ID and returns it as JSON.
 func (h *Handlers) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)

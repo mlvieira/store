@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// jsonResponse represents a standardized JSON response.
 type jsonResponse struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message,omitempty"`
@@ -13,6 +14,7 @@ type jsonResponse struct {
 	ID      int    `json:"id,omitempty"`
 }
 
+// writeJSON writes a JSON response to the HTTP response writer.
 func writeJSON(w http.ResponseWriter, status int, data interface{}, logger *log.Logger) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
