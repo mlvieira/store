@@ -1,10 +1,10 @@
 package main
 
 import (
-	"html/template"
-
+	"github.com/mlvieira/store/internal/application"
 	"github.com/mlvieira/store/internal/config"
 	"github.com/mlvieira/store/internal/driver"
+	"github.com/mlvieira/store/internal/render"
 	"github.com/mlvieira/store/internal/repository"
 	"github.com/mlvieira/store/internal/web"
 )
@@ -29,18 +29,20 @@ func main() {
 		Transaction: repository.NewTransactionRepository(conn),
 	}
 
-	tc := make(map[string]*template.Template)
+	renderer := render.NewRenderer(cfg.Env, cfg.Stripe.Key, cfg.API, errorLog)
 
-	app := &web.Application{
-		Config:        cfg,
-		InfoLog:       infoLog,
-		ErrorLog:      errorLog,
-		TemplateCache: tc,
-		Version:       version,
-		Repositories:  repositories,
+	baseApp := &application.Application{
+		Config:       cfg,
+		InfoLog:      infoLog,
+		ErrorLog:     errorLog,
+		Version:      version,
+		Repositories: repositories,
+		Renderer:     renderer,
 	}
 
-	if err := app.Serve(); err != nil {
+	webApp := &web.Application{Application: baseApp}
+
+	if err := webApp.Serve(); err != nil {
 		errorLog.Fatalf("Server error: %v", err)
 	}
 }

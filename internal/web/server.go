@@ -9,7 +9,7 @@ import (
 func (app *Application) Serve() error {
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", app.Config.Port),
-		Handler:           WebRoutes(app), // Use web.Routes to initialize handlers
+		Handler:           WebRoutes(app),
 		IdleTimeout:       30 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
