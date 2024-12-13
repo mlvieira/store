@@ -26,6 +26,7 @@ func main() {
 		Config:       cfg,
 		InfoLog:      infoLog,
 		ErrorLog:     errorLog,
+		Version:      version,
 		Repositories: repository.NewRepositories(conn),
 	}
 
