@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -21,32 +21,32 @@ type jsonResponse struct {
 	ID      int    `json:"id,omitempty"`
 }
 
-func (app *application) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
+func (app *Application) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return
 	}
 
-	app.infoLog.Printf("Raw amount: %s", payload.Amount)
+	app.InfoLog.Printf("Raw amount: %s", payload.Amount)
 
 	amount, err := strconv.ParseFloat(payload.Amount, 64)
 	if err != nil {
-		app.errorLog.Println("Failed to convert to float:", err)
+		app.ErrorLog.Println("Failed to convert to float:", err)
 		return
 	}
 
-	app.infoLog.Printf("Calling card.Charge with Currency: %s, Amount: %f", payload.Currency, amount)
+	app.InfoLog.Printf("Calling card.Charge with Currency: %s, Amount: %f", payload.Currency, amount)
 	card := cards.Card{
-		Secret:   app.config.stripe.secret,
-		Key:      app.config.stripe.key,
+		Secret:   app.Config.Stripe.Secret,
+		Key:      app.Config.Stripe.Key,
 		Currency: payload.Currency,
 	}
 
 	pi, msg, err := card.Charge(payload.Currency, amount)
 	if err != nil {
-		app.errorLog.Printf("card.Charge failed: %v", err)
+		app.ErrorLog.Printf("card.Charge failed: %v", err)
 
 		j := jsonResponse{
 			OK:      false,
@@ -54,30 +54,30 @@ func (app *application) GetPaymentIntent(w http.ResponseWriter, r *http.Request)
 		}
 
 		if err := writeJson(w, http.StatusInternalServerError, j); err != nil {
-			app.errorLog.Println("Failed to write JSON response:", err)
+			app.ErrorLog.Println("Failed to write JSON response:", err)
 		}
 
 		return
 	}
 
 	if err := writeJson(w, http.StatusOK, pi); err != nil {
-		app.errorLog.Println("Failed to write JSON response:", err)
+		app.ErrorLog.Println("Failed to write JSON response:", err)
 		return
 	}
 }
 
-func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
+func (app *Application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
 
-	widget, err := app.repositories.Widget.GetWidgetByID(r.Context(), widgetID)
+	widget, err := app.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
 	if err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return
 	}
 
 	if err := writeJson(w, http.StatusOK, widget); err != nil {
-		app.errorLog.Println("Failed to write JSON response:", err)
+		app.ErrorLog.Println("Failed to write JSON response:", err)
 		return
 	}
 }

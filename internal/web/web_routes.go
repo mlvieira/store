@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes() http.Handler {
+func WebRoutes(app *Application) http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Get("/terminal", app.VirtualTerminal)

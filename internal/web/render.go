@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"embed"
@@ -35,26 +35,26 @@ func formatCurrency(n float64) string {
 //go:embed templates
 var templateFS embed.FS
 
-func (app *application) AddDefaultData(td *templateData, r *http.Request) *templateData {
-	td.StripePublic = app.config.stripe.key
-	td.API = app.config.api
+func (app *Application) AddDefaultData(td *templateData, r *http.Request) *templateData {
+	td.StripePublic = app.Config.Stripe.Key
+	td.API = app.Config.API
 	return td
 }
 
-func (app *application) renderTemplate(w http.ResponseWriter, r *http.Request, page string, td *templateData, partials ...string) error {
+func (app *Application) renderTemplate(w http.ResponseWriter, r *http.Request, page string, td *templateData, partials ...string) error {
 	var t *template.Template
 	var err error
 
 	templateToRender := fmt.Sprintf("templates/%s.page.html", page)
 
-	_, templateInMap := app.templateCache[templateToRender]
+	_, templateInMap := app.TemplateCache[templateToRender]
 
-	if app.config.env == "production" && templateInMap {
-		t = app.templateCache[templateToRender]
+	if app.Config.Env == "production" && templateInMap {
+		t = app.TemplateCache[templateToRender]
 	} else {
 		t, err = app.parseTemplate(partials, page, templateToRender)
 		if err != nil {
-			app.errorLog.Println(err)
+			app.ErrorLog.Println(err)
 			return err
 		}
 	}
@@ -67,14 +67,14 @@ func (app *application) renderTemplate(w http.ResponseWriter, r *http.Request, p
 
 	err = t.Execute(w, td)
 	if err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return err
 	}
 
 	return nil
 }
 
-func (app *application) parseTemplate(partials []string, page, templateToRender string) (*template.Template, error) {
+func (app *Application) parseTemplate(partials []string, page, templateToRender string) (*template.Template, error) {
 	var t *template.Template
 	var err error
 	baseTemplate := "templates/base.layout.html"
@@ -97,11 +97,11 @@ func (app *application) parseTemplate(partials []string, page, templateToRender 
 	}
 
 	if err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return nil, err
 	}
 
-	app.templateCache[templateToRender] = t
+	app.TemplateCache[templateToRender] = t
 
 	return t, nil
 }

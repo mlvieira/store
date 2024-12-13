@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"net/http"
@@ -7,16 +7,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
+func (app *Application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "terminal", nil); err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 	}
 }
 
-func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
+func (app *Application) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return
 	}
 
@@ -38,18 +38,18 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	if err = app.renderTemplate(w, r, "succeeded", &templateData{
 		Data: data,
 	}); err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 	}
 
 }
 
-func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
+func (app *Application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
 
-	widget, err := app.repositories.Widget.GetWidgetByID(r.Context(), widgetID)
+	widget, err := app.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
 	if err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 		return
 	}
 
@@ -59,6 +59,6 @@ func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "buy-once", &templateData{
 		Data: data,
 	}); err != nil {
-		app.errorLog.Println(err)
+		app.ErrorLog.Println(err)
 	}
 }
