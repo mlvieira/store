@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/mlvieira/store/internal/application"
+	"github.com/mlvieira/store/internal/handlers"
 	"github.com/mlvieira/store/internal/router"
 )
 
@@ -16,7 +17,9 @@ func main() {
 	}
 	defer cleanup()
 
-	webRouter, err := router.InitRouter(baseApp, "web")
+	baseHandlers := handlers.NewHandlers(baseApp)
+
+	webRouter, err := router.InitRouter(baseHandlers, "web")
 	if err != nil {
 		log.Fatalf("Error initializing web router: %v", err)
 	}

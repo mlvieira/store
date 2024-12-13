@@ -6,17 +6,22 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mlvieira/store/internal/application"
 	"github.com/mlvieira/store/internal/cards"
+	"github.com/mlvieira/store/internal/handlers"
 )
 
-// Handlers provides methods to handle web and API requests.
-type Handlers struct {
-	App *application.Application
+// APIHandlers embeds the shared Handlers to provide API-specific handlers.
+type APIHandlers struct {
+	*handlers.Handlers
+}
+
+// NewAPIHandlers initializes and returns an APIHandlers instance.
+func NewAPIHandlers(h *handlers.Handlers) *APIHandlers {
+	return &APIHandlers{Handlers: h}
 }
 
 // GetPaymentIntent creates a Stripe payment intent and returns it as JSON.
-func (h *Handlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
+func (h *APIHandlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -55,7 +60,7 @@ func (h *Handlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetWidgetByID fetches a widget by its ID and returns it as JSON.
-func (h *Handlers) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
+func (h *APIHandlers) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
 
