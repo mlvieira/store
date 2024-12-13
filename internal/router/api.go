@@ -1,4 +1,4 @@
-package api
+package router
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 	"github.com/mlvieira/store/internal/handlers/api"
 )
 
-func APIRoutes(app *application.Application) http.Handler {
+func InitAPIRoutes(app *application.Application) http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
@@ -22,8 +22,10 @@ func APIRoutes(app *application.Application) http.Handler {
 
 	handlers := &api.Handlers{App: app}
 
-	mux.Post("/api/payment-intent", handlers.GetPaymentIntent)
-	mux.Get("/api/widget/{id}", handlers.GetWidgetByID)
+	mux.Route("/api", func(r chi.Router) {
+		r.Post("/payment-intent", handlers.GetPaymentIntent)
+		r.Get("/widget/{id}", handlers.GetWidgetByID)
+	})
 
 	return mux
 }

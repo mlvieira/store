@@ -1,4 +1,4 @@
-package web
+package router
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/handlers/web"
 )
 
-func WebRoutes(app *application.Application) http.Handler {
+func InitWebRoutes(app *application.Application) http.Handler {
 	mux := chi.NewRouter()
 
 	handlers := &web.Handlers{App: app}

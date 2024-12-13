@@ -4,11 +4,10 @@ import (
 	"log"
 
 	"github.com/mlvieira/store/internal/application"
-	"github.com/mlvieira/store/internal/web"
+	"github.com/mlvieira/store/internal/router"
 )
 
 const version = "1.0.0"
-const cssVersion = "1"
 
 func main() {
 	baseApp, cleanup, err := application.NewBaseApplication(version)
@@ -17,7 +16,12 @@ func main() {
 	}
 	defer cleanup()
 
-	if err := web.Serve(baseApp); err != nil {
+	webRouter, err := router.InitRouter(baseApp, "web")
+	if err != nil {
+		log.Fatalf("Error initializing web router: %v", err)
+	}
+
+	if err := router.Serve(baseApp, webRouter); err != nil {
 		baseApp.ErrorLog.Fatalf("Server error: %v", err)
 	}
 }
