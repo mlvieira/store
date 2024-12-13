@@ -1,38 +1,22 @@
 package main
 
 import (
+	"log"
+
 	"github.com/mlvieira/store/internal/api"
 	"github.com/mlvieira/store/internal/application"
-	"github.com/mlvieira/store/internal/config"
-	"github.com/mlvieira/store/internal/driver"
-	"github.com/mlvieira/store/internal/repository"
 )
 
 const version = "1.0.0"
 
 func main() {
-	cfg := config.NewConfig()
-
-	infoLog, errorLog := config.NewLoggers()
-
-	conn, err := driver.OpenDB(cfg.DB.DSN)
+	baseApp, cleanup, err := application.NewBaseApplication(version)
 	if err != nil {
-		errorLog.Fatal(err)
+		log.Fatalf("Error initializing application: %v", err)
 	}
+	defer cleanup()
 
-	defer conn.Close()
-
-	baseApp := &application.Application{
-		Config:       cfg,
-		InfoLog:      infoLog,
-		ErrorLog:     errorLog,
-		Version:      version,
-		Repositories: repository.NewRepositories(conn),
-	}
-
-	apiApp := &api.Application{Application: baseApp}
-
-	if err := apiApp.Serve(); err != nil {
-		errorLog.Fatalf("Server error: %v", err)
+	if err := api.Serve(baseApp); err != nil {
+		baseApp.ErrorLog.Fatalf("API server error: %v", err)
 	}
 }

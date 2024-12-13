@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/mlvieira/store/internal/application"
 )
 
-func (app *Application) Serve() error {
+func Serve(app *application.Application) error {
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", app.Config.Port),
-		Handler:           WebRoutes(app.Application),
+		Handler:           WebRoutes(app),
 		IdleTimeout:       30 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
