@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mlvieira/store/internal/cards"
 	"github.com/mlvieira/store/internal/handlers"
 	"github.com/mlvieira/store/internal/render"
 )
@@ -41,6 +42,21 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	paymentAmount := r.Form.Get("payment_amount")
 	paymentCurrency := r.Form.Get("payment_currency")
 
+	card := cards.Card{
+		Secret: h.App.Config.Stripe.Secret,
+		Key:    h.App.Config.Stripe.Key,
+	}
+
+	pm, err := card.GetPaymentMethod(paymentMethod)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
+
+	lastFour := pm.Card.Last4
+	expiryMonth := pm.Card.ExpMonth
+	expiryYear := pm.Card.ExpYear
+
 	data := make(map[string]any)
 	data["cardholder"] = cardHolder
 	data["email"] = email
@@ -48,6 +64,9 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	data["pm"] = paymentMethod
 	data["pa"] = paymentAmount
 	data["pc"] = paymentCurrency
+	data["last_four"] = lastFour
+	data["expiry_month"] = expiryMonth
+	data["expire_year"] = expiryYear
 
 	if err = h.App.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
 		Data: data,

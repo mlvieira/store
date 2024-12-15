@@ -134,7 +134,7 @@ const confirmPayment = async (stripe, clientSecret, form) => {
 };
 
 const processPaymentSuccess = (paymentIntent) => {
-    document.getElementById('payment_method').value = paymentIntent.payment_method_types[0];
+    document.getElementById('payment_method').value = paymentIntent.payment_method;
     document.getElementById('payment_intent').value = paymentIntent.id;
     document.getElementById('payment_amount').value = paymentIntent.amount;
     document.getElementById('payment_currency').value = paymentIntent.currency;
