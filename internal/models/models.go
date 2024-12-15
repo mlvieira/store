@@ -16,8 +16,8 @@ type Widget struct {
 	UpdatedAt      time.Time `json:"-"`
 }
 
-// Orders is the type for all orders
-type Orders struct {
+// Order is the type for all order
+type Order struct {
 	ID            int       `json:"id"`
 	WidgetID      int       `json:"widget_id"`
 	TransactionID int       `json:"transaction_id"`
