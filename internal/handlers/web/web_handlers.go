@@ -20,6 +20,13 @@ func NewWebHandlers(h *handlers.Handlers) *WebHandlers {
 	return &WebHandlers{Handlers: h}
 }
 
+// Homepage renders the home page.
+func (h *WebHandlers) Homepage(w http.ResponseWriter, r *http.Request) {
+	if err := h.App.Renderer.RenderTemplate(w, r, "home", nil); err != nil {
+		h.App.ErrorLog.Println(err)
+	}
+}
+
 // VirtualTerminal renders the virtual terminal page.
 func (h *WebHandlers) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	if err := h.App.Renderer.RenderTemplate(w, r, "terminal", nil); err != nil {

@@ -13,6 +13,7 @@ func InitWebRoutes(baseHandlers *handlers.Handlers) http.Handler {
 
 	webHandlers := web.NewWebHandlers(baseHandlers)
 
+	mux.Get("/", webHandlers.Homepage)
 	mux.Get("/terminal", webHandlers.VirtualTerminal)
 	mux.Post("/payment", webHandlers.PaymentSucceeded)
 	mux.Get("/widget/{id}", webHandlers.ChargeOnce)
