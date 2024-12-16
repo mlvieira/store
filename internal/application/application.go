@@ -3,6 +3,7 @@ package application
 import (
 	"log"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/mlvieira/store/internal/config"
 	"github.com/mlvieira/store/internal/render"
 	"github.com/mlvieira/store/internal/repository"
@@ -16,4 +17,5 @@ type Application struct {
 	Version      string
 	Repositories *repository.Repositories
 	Renderer     *render.Renderer
+	Session      *scs.SessionManager
 }

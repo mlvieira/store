@@ -19,7 +19,7 @@ func main() {
 
 	baseHandlers := handlers.NewHandlers(baseApp)
 
-	webRouter, err := router.InitRouter(baseHandlers, "web")
+	webRouter, err := router.InitRouter(baseHandlers, "web", baseApp.Session)
 	if err != nil {
 		log.Fatalf("Error initializing web router: %v", err)
 	}

@@ -19,7 +19,7 @@ func main() {
 
 	baseHandlers := handlers.NewHandlers(baseApp)
 
-	apiRouter, err := router.InitRouter(baseHandlers, "api")
+	apiRouter, err := router.InitRouter(baseHandlers, "api", nil)
 	if err != nil {
 		log.Fatalf("Error initializing API router: %v", err)
 	}
