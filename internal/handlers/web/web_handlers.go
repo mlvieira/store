@@ -47,6 +47,12 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		Key:    h.App.Config.Stripe.Key,
 	}
 
+	ci, err := card.RetrieveChargeID(paymentIntent)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
+
 	pm, err := card.GetPaymentMethod(paymentMethod)
 	if err != nil {
 		h.App.ErrorLog.Println(err)
@@ -54,8 +60,8 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lastFour := pm.Card.Last4
-	expiryMonth := pm.Card.ExpMonth
-	expiryYear := pm.Card.ExpYear
+	expiryMonth := strconv.FormatInt(pm.Card.ExpMonth, 10)
+	expiryYear := strconv.FormatInt(pm.Card.ExpYear, 10)
 
 	data := make(map[string]any)
 	data["cardholder"] = cardHolder
@@ -66,7 +72,8 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	data["pc"] = paymentCurrency
 	data["last_four"] = lastFour
 	data["expiry_month"] = expiryMonth
-	data["expire_year"] = expiryYear
+	data["expiry_year"] = expiryYear
+	data["bank_return_code"] = ci
 
 	if err = h.App.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
 		Data: data,

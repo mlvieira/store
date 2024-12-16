@@ -1,7 +1,10 @@
 package cards
 
 import (
+	"errors"
+
 	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/charge"
 	"github.com/stripe/stripe-go/v81/paymentintent"
 	"github.com/stripe/stripe-go/v81/paymentmethod"
 )
@@ -71,6 +74,28 @@ func (c *Card) RetrievePaymentIntent(id string) (*stripe.PaymentIntent, error) {
 	}
 
 	return pi, nil
+}
+
+// RetrieveChargeID retrieves the charge ID associated with a PaymentIntent
+func (c *Card) RetrieveChargeID(paymentIntentID string) (string, error) {
+	stripe.Key = c.Secret
+
+	params := &stripe.ChargeListParams{
+		PaymentIntent: stripe.String(paymentIntentID),
+	}
+	params.Filters.AddFilter("limit", "", "1")
+
+	iter := charge.List(params)
+	if iter.Next() {
+		ch := iter.Charge()
+		return ch.ID, nil
+	}
+
+	if iter.Err() != nil {
+		return "", iter.Err()
+	}
+
+	return "", errors.New("no charges found for this PaymentIntent")
 }
 
 // cardErrorMessage maps Stripe error codes to user-friendly error messages.

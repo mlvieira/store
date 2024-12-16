@@ -14,5 +14,6 @@
     <p>Payment Amount: {{index .Data "pa"}}</p>
     <p>Payment Currency: {{index .Data "pc"}}</p>
     <p>Last Four: {{index .Data "last_four"}}</p>
-    <p>Expiry Data: {{index .Data "expiry_month"}}/{{index .Data "expiry_year"}}</p>
+	<p>Expiry Date: {{concat (index .Data "expiry_month") (index .Data "expiry_year") "/"}}</p>
+    <p>Bank Return Code: {{index .Data "bank_return_code"}}</p>
 {{end}}

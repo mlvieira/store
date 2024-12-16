@@ -12,12 +12,21 @@ import (
 // functions defines custom template functions.
 var functions = template.FuncMap{
 	"formatCurrency": formatCurrency,
+	"concat":         concat,
 }
 
 // formatCurrency formats a float as a currency string.
 func formatCurrency(n float64) string {
 	i := n / 100
 	return fmt.Sprintf("$%.2f", i)
+}
+
+// concat Concat two strings
+func concat(x, y, sep string) string {
+	if sep == "" {
+		sep = " "
+	}
+	return x + sep + y
 }
 
 // Embed templates directory
