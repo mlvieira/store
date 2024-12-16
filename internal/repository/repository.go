@@ -22,11 +22,17 @@ type OrderRepository interface {
 	InsertOrder(ctx context.Context, order models.Order) (int, error)
 }
 
+// CustomerRepository defines methods to interact with customer data.
+type CustomerRepository interface {
+	InsertCustomer(ctx context.Context, customer models.Customer) (int, error)
+}
+
 // Repositories aggregates repository interfaces.
 type Repositories struct {
 	Widget      WidgetRepository
 	Transaction TransactionRepository
 	Order       OrderRepository
+	Customer    CustomerRepository
 }
 
 // NewRepositories initializes repositories with a database connection.
@@ -35,5 +41,6 @@ func NewRepositories(conn *sql.DB) *Repositories {
 		Widget:      NewWidgetRepository(conn),
 		Transaction: NewTransactionRepository(conn),
 		Order:       NewOrderRepository(conn),
+		Customer:    NewCustomerRepository(conn),
 	}
 }
