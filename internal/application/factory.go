@@ -8,6 +8,7 @@ import (
 	"github.com/mlvieira/store/internal/driver"
 	"github.com/mlvieira/store/internal/render"
 	"github.com/mlvieira/store/internal/repository"
+	"github.com/mlvieira/store/internal/services"
 )
 
 // NewBaseApplication initializes the application with configuration, logging, and resources.
@@ -31,6 +32,7 @@ func NewBaseApplication(version string) (*Application, func(), error) {
 	sessionManager.Cookie.Secure = cfg.Env == "production"
 
 	repositories := repository.NewRepositories(conn)
+	services := services.NewServices(repositories)
 	renderer := render.NewRenderer(cfg.Env, cfg.Stripe.Key, cfg.API, errorLog)
 
 	baseApp := &Application{
@@ -41,6 +43,7 @@ func NewBaseApplication(version string) (*Application, func(), error) {
 		Repositories: repositories,
 		Renderer:     renderer,
 		Session:      sessionManager,
+		Services:     services,
 	}
 
 	return baseApp, cleanup, nil

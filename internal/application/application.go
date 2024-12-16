@@ -7,6 +7,7 @@ import (
 	"github.com/mlvieira/store/internal/config"
 	"github.com/mlvieira/store/internal/render"
 	"github.com/mlvieira/store/internal/repository"
+	"github.com/mlvieira/store/internal/services"
 )
 
 // Application holds the core application context and dependencies.
@@ -18,4 +19,5 @@ type Application struct {
 	Repositories *repository.Repositories
 	Renderer     *render.Renderer
 	Session      *scs.SessionManager
+	Services     *services.Services
 }
