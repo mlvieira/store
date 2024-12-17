@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/store/internal/cards"
 	"github.com/mlvieira/store/internal/handlers"
+	"github.com/mlvieira/store/internal/models"
 	"github.com/mlvieira/store/internal/render"
 )
 
@@ -42,12 +43,14 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardHolder := r.Form.Get("cardholder_name")
+	firstName := r.Form.Get("first_name")
+	lastName := r.Form.Get("last_name")
 	email := r.Form.Get("email")
 	paymentIntent := r.Form.Get("payment_intent")
 	paymentMethod := r.Form.Get("payment_method")
 	paymentAmount := r.Form.Get("payment_amount")
 	paymentCurrency := r.Form.Get("payment_currency")
+	widgetID, _ := strconv.Atoi(r.Form.Get("widget_id"))
 
 	card := cards.Card{
 		Secret: h.App.Config.Stripe.Secret,
@@ -67,20 +70,69 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lastFour := pm.Card.Last4
-	expiryMonth := strconv.FormatInt(pm.Card.ExpMonth, 10)
-	expiryYear := strconv.FormatInt(pm.Card.ExpYear, 10)
+	expiryMonth := pm.Card.ExpMonth
+	expiryYear := pm.Card.ExpYear
+
+	customer := models.Customer{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+	}
+
+	customerID, err := h.App.Services.CustomerService.SaveCustomer(r.Context(), customer)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
+
+	h.App.InfoLog.Println(customerID)
+
+	amount, _ := strconv.ParseInt(paymentAmount, 10, 64)
+	txn := models.Transaction{
+		Amount:              amount,
+		Currency:            paymentCurrency,
+		LastFour:            lastFour,
+		ExpiryMonth:         int(expiryMonth),
+		ExpiryYear:          int(expiryYear),
+		BankReturnCode:      ci,
+		TransactionStatusID: 2,
+	}
+
+	txnID, err := h.App.Services.TransactionService.SaveTransaction(r.Context(), txn)
+	if err != nil {
+		h.App.InfoLog.Println(err)
+		return
+	}
+
+	h.App.InfoLog.Println(txnID)
+
+	order := models.Order{
+		WidgetID:      widgetID,
+		TransactionID: txnID,
+		CustomerID:    customerID,
+		StatusID:      1,
+		Quantity:      1,
+		Amount:        amount,
+	}
+
+	_, err = h.App.Services.OrderService.PlaceOrder(r.Context(), order)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
 
 	data := make(map[string]any)
-	data["cardholder"] = cardHolder
 	data["email"] = email
 	data["pi"] = paymentIntent
 	data["pm"] = paymentMethod
-	data["pa"] = paymentAmount
+	data["pa"] = amount
 	data["pc"] = paymentCurrency
 	data["last_four"] = lastFour
-	data["expiry_month"] = expiryMonth
-	data["expiry_year"] = expiryYear
+	data["expiry_month"] = strconv.FormatInt(pm.Card.ExpMonth, 10)
+	data["expiry_year"] = strconv.FormatInt(pm.Card.ExpYear, 10)
 	data["bank_return_code"] = ci
+	data["first_name"] = firstName
+	data["last_name"] = lastName
 
 	if err = h.App.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
 		Data: data,
