@@ -3,5 +3,5 @@ package api
 // stripePayload represents a payment intent request payload.
 type stripePayload struct {
 	Currency string `json:"currency"`
-	Amount   string `json:"amount"`
+	Amount   int64  `json:"amount"`
 }

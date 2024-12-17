@@ -28,10 +28,12 @@ const setupFormListeners = (stripe) => {
             return;
         }
 
+        const amountInCents = Math.round(amount * 100);
+
         toggleProcessingState(form, true);
         try {
             const payload = {
-                amount: amount,
+                amount: amountInCents,
                 currency: 'brl',
             };
 

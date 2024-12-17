@@ -26,16 +26,16 @@ type Transaction struct {
 }
 
 // Charge creates a payment intent for a specified currency and amount.
-func (c *Card) Charge(currency string, amount float64) (*stripe.PaymentIntent, string, error) {
+func (c *Card) Charge(currency string, amount int64) (*stripe.PaymentIntent, string, error) {
 	return c.CreatePaymentIntent(currency, amount)
 }
 
 // CreatePaymentIntent generates a Stripe payment intent for a given currency and amount.
-func (c *Card) CreatePaymentIntent(currency string, amount float64) (*stripe.PaymentIntent, string, error) {
+func (c *Card) CreatePaymentIntent(currency string, amount int64) (*stripe.PaymentIntent, string, error) {
 	stripe.Key = c.Secret
 
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(int64(amount * 100)),
+		Amount:   stripe.Int64(amount),
 		Currency: stripe.String(currency),
 	}
 

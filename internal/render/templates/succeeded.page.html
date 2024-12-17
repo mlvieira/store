@@ -8,10 +8,10 @@
     <h2 class="mt-5">Payment Succeeded</h2>
     <hr>
     <p>Payment Intent: {{index .Data "pi"}}</p>
-    <p>Cardholder: {{index .Data "cardholder"}}</p>
+    <p>Customer Name: {{concat (index .Data "first_name") (index .Data "last_name") ""}}</p>
     <p>Email: {{index .Data "email"}}</p>
     <p>Payment Method: {{index .Data "pm"}}</p>
-    <p>Payment Amount: {{index .Data "pa"}}</p>
+    <p>Payment Amount: {{formatPrice (index .Data "pa") "R$"}}</p>
     <p>Payment Currency: {{index .Data "pc"}}</p>
     <p>Last Four: {{index .Data "last_four"}}</p>
 	<p>Expiry Date: {{concat (index .Data "expiry_month") (index .Data "expiry_year") "/"}}</p>

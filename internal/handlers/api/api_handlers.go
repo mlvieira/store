@@ -29,22 +29,14 @@ func (h *APIHandlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.App.InfoLog.Printf("Raw amount: %s", payload.Amount)
-
-	amount, err := strconv.ParseFloat(payload.Amount, 64)
-	if err != nil {
-		h.App.ErrorLog.Println("Failed to convert to float:", err)
-		return
-	}
-
-	h.App.InfoLog.Printf("Calling card.Charge with Currency: %s, Amount: %f", payload.Currency, amount)
+	h.App.InfoLog.Printf("Calling card.Charge with Currency: %s, Amount: %d", payload.Currency, payload.Amount)
 	card := cards.Card{
 		Secret:   h.App.Config.Stripe.Secret,
 		Key:      h.App.Config.Stripe.Key,
 		Currency: payload.Currency,
 	}
 
-	pi, msg, err := card.Charge(payload.Currency, amount)
+	pi, msg, err := card.Charge(payload.Currency, payload.Amount)
 	if err != nil {
 		h.App.ErrorLog.Printf("card.Charge failed: %v", err)
 

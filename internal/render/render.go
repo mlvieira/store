@@ -11,14 +11,16 @@ import (
 
 // functions defines custom template functions.
 var functions = template.FuncMap{
-	"formatCurrency": formatCurrency,
-	"concat":         concat,
+	"formatPrice": formatPrice,
+	"concat":      concat,
 }
 
-// formatCurrency formats a float as a currency string.
-func formatCurrency(n float64) string {
-	i := n / 100
-	return fmt.Sprintf("$%.2f", i)
+// formatPrice formats an int64 (in cents) as a currency string or plain float string.
+func formatPrice(n int64, currencySymbol string) string {
+	if currencySymbol != "" {
+		return fmt.Sprintf("%s%.2f", currencySymbol, float64(n)/100.0)
+	}
+	return fmt.Sprintf("%.2f", float64(n)/100.0)
 }
 
 // concat Concat two strings

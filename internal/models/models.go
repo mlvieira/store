@@ -10,7 +10,7 @@ type Widget struct {
 	Name           string    `json:"name"`
 	Description    string    `json:"description"`
 	InventoryLevel int       `json:"inventory_level"`
-	Price          float64   `json:"price"`
+	Price          int64     `json:"price"`
 	Image          string    `json:"image"`
 	CreatedAt      time.Time `json:"-"`
 	UpdatedAt      time.Time `json:"-"`
