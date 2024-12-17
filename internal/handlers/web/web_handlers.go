@@ -50,7 +50,11 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	paymentMethod := r.Form.Get("payment_method")
 	paymentAmount := r.Form.Get("payment_amount")
 	paymentCurrency := r.Form.Get("payment_currency")
-	widgetID, _ := strconv.Atoi(r.Form.Get("widget_id"))
+	widgetID, err := strconv.Atoi(r.Form.Get("widget_id"))
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
 
 	card := cards.Card{
 		Secret: h.App.Config.Stripe.Secret,
@@ -85,9 +89,12 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.App.InfoLog.Println(customerID)
+	amount, err := strconv.ParseInt(paymentAmount, 10, 64)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
 
-	amount, _ := strconv.ParseInt(paymentAmount, 10, 64)
 	txn := models.Transaction{
 		Amount:              amount,
 		Currency:            paymentCurrency,
@@ -104,8 +111,6 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.App.InfoLog.Println(txnID)
-
 	order := models.Order{
 		WidgetID:      widgetID,
 		TransactionID: txnID,
@@ -121,18 +126,19 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := make(map[string]any)
-	data["email"] = email
-	data["pi"] = paymentIntent
-	data["pm"] = paymentMethod
-	data["pa"] = amount
-	data["pc"] = paymentCurrency
-	data["last_four"] = lastFour
-	data["expiry_month"] = strconv.FormatInt(pm.Card.ExpMonth, 10)
-	data["expiry_year"] = strconv.FormatInt(pm.Card.ExpYear, 10)
-	data["bank_return_code"] = ci
-	data["first_name"] = firstName
-	data["last_name"] = lastName
+	data := map[string]any{
+		"email":            email,
+		"pi":               paymentIntent,
+		"pm":               paymentMethod,
+		"pa":               amount,
+		"pc":               paymentCurrency,
+		"last_four":        lastFour,
+		"expiry_month":     strconv.FormatInt(pm.Card.ExpMonth, 10),
+		"expiry_year":      strconv.FormatInt(pm.Card.ExpYear, 10),
+		"bank_return_code": ci,
+		"first_name":       firstName,
+		"last_name":        lastName,
+	}
 
 	if err = h.App.Renderer.RenderTemplate(w, r, "succeeded", &render.TemplateData{
 		Data: data,
@@ -145,7 +151,11 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 // ChargeOnce renders the widget purchase page for a single charge.
 func (h *WebHandlers) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	widgetID, _ := strconv.Atoi(id)
+	widgetID, err := strconv.Atoi(id)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
 
 	widget, err := h.App.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
 	if err != nil {
@@ -153,8 +163,9 @@ func (h *WebHandlers) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := make(map[string]any)
-	data["widget"] = widget
+	data := map[string]any{
+		"widget": widget,
+	}
 
 	if err := h.App.Renderer.RenderTemplate(w, r, "buy-once", &render.TemplateData{
 		Data: data,

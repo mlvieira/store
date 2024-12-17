@@ -54,7 +54,11 @@ func (h *APIHandlers) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 // GetWidgetByID fetches a widget by its ID and returns it as JSON.
 func (h *APIHandlers) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	widgetID, _ := strconv.Atoi(id)
+	widgetID, err := strconv.Atoi(id)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
 
 	widget, err := h.App.Repositories.Widget.GetWidgetByID(r.Context(), widgetID)
 	if err != nil {
