@@ -31,8 +31,9 @@ func (r *transactionRepo) InsertTransaction(ctx context.Context, txn models.Tran
 	stmt := `
 		INSERT INTO transactions 
 		(amount, currency, last_four, bank_return_code, 
-		 transaction_status_id, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		 transaction_status_id, created_at, updated_at, 
+		 expiry_month, expiry_year)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := tx.ExecContext(ctx, stmt,
@@ -43,6 +44,8 @@ func (r *transactionRepo) InsertTransaction(ctx context.Context, txn models.Tran
 		txn.TransactionStatusID,
 		time.Now(),
 		time.Now(),
+		txn.ExpiryMonth,
+		txn.ExpiryYear,
 	)
 	if err != nil {
 		tx.Rollback()
