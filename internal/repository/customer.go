@@ -29,8 +29,8 @@ func (r *customerRepo) InsertCustomer(ctx context.Context, customer models.Custo
 	}
 
 	stmt := `
-		INSERT INTO customer 
-		(first_name, last_email, email, created_at, updated_at)
+		INSERT INTO customers 
+		(first_name, last_name, email, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?)
 	`
 

@@ -24,7 +24,7 @@ type Order struct {
 	CustomerID    int       `json:"customer_id"`
 	StatusID      int       `json:"status_id"`
 	Quantity      int       `json:"quantity"`
-	Amount        int       `json:"amount"`
+	Amount        int64     `json:"amount"`
 	CreatedAt     time.Time `json:"-"`
 	UpdatedAt     time.Time `json:"-"`
 }
@@ -48,7 +48,7 @@ type TransactionStatus struct {
 // Transaction is the type for transactions
 type Transaction struct {
 	ID                  int       `json:"id"`
-	Amount              int       `json:"amount"`
+	Amount              int64     `json:"amount"`
 	Currency            string    `json:"currency"`
 	LastFour            string    `json:"last_four"`
 	BankReturnCode      string    `json:"bank_return_code"`

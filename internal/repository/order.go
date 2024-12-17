@@ -29,10 +29,10 @@ func (r *orderRepo) InsertOrder(ctx context.Context, order models.Order) (int, e
 	}
 
 	stmt := `
-		INSERT INTO order 
-		(widget_id, transation_id, status_id, quantity, 
-		 amount, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO orders  
+		(widget_id, transaction_id, status_id, quantity, 
+		 amount, created_at, updated_at, customer_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := tx.ExecContext(ctx, stmt,
@@ -43,6 +43,7 @@ func (r *orderRepo) InsertOrder(ctx context.Context, order models.Order) (int, e
 		order.Amount,
 		time.Now(),
 		time.Now(),
+		order.CustomerID,
 	)
 	if err != nil {
 		tx.Rollback()
