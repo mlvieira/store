@@ -103,6 +103,8 @@ func (h *WebHandlers) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 		ExpiryYear:          int(expiryYear),
 		BankReturnCode:      ci,
 		TransactionStatusID: 2,
+		PaymentIntent:       paymentIntent,
+		PaymentMethod:       paymentMethod,
 	}
 
 	txnID, err := h.App.Services.TransactionService.SaveTransaction(r.Context(), txn)
