@@ -81,3 +81,18 @@ type Customer struct {
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
+
+// TransactionData is the type for basic transaction data
+type TransactionData struct {
+	FirstName       string
+	LastName        string
+	Email           string
+	PaymentIntentID string
+	PaymentMethodID string
+	PaymentAmount   int64
+	PaymentCurrency string
+	LastFour        string
+	ExpiryMonth     string
+	ExpiryYear      string
+	BankReturnCode  string
+}

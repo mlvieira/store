@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/store/internal/handlers"
 	"github.com/mlvieira/store/internal/handlers/web"
 	"github.com/mlvieira/store/internal/middleware"
@@ -18,9 +19,18 @@ func InitWebRoutes(baseHandlers *handlers.Handlers, scs *scs.SessionManager) htt
 	webHandlers := web.NewWebHandlers(baseHandlers)
 
 	mux.Get("/", webHandlers.Homepage)
-	mux.Get("/terminal", webHandlers.VirtualTerminal)
-	mux.Post("/payment", webHandlers.PaymentSucceeded)
 	mux.Get("/widget/{id}", webHandlers.ChargeOnce)
+
+	mux.Route("/payment", func(r chi.Router) {
+		r.Post("/", webHandlers.PaymentSucceeded)
+		r.Get("/receipt", webHandlers.Receipt)
+	})
+
+	mux.Route("/terminal", func(r chi.Router) {
+		r.Get("/", webHandlers.VirtualTerminal)
+		r.Post("/payment", webHandlers.PaymentVirtualTerminal)
+		r.Get("/receipt", webHandlers.ReceiptVirtualTerminal)
+	})
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))

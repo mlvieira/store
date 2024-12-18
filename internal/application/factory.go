@@ -1,11 +1,13 @@
 package application
 
 import (
+	"encoding/gob"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/mlvieira/store/internal/config"
 	"github.com/mlvieira/store/internal/driver"
+	"github.com/mlvieira/store/internal/models"
 	"github.com/mlvieira/store/internal/render"
 	"github.com/mlvieira/store/internal/repository"
 	"github.com/mlvieira/store/internal/services"
@@ -45,6 +47,8 @@ func NewBaseApplication(version string) (*Application, func(), error) {
 		Session:      sessionManager,
 		Services:     services,
 	}
+
+	gob.Register(models.TransactionData{})
 
 	return baseApp, cleanup, nil
 }
