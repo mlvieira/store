@@ -83,6 +83,7 @@ type Customer struct {
 }
 
 // TransactionData is the type for basic transaction data
+// Should we reuse Transaction model here?
 type TransactionData struct {
 	FirstName       string
 	LastName        string
