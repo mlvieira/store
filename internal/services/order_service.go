@@ -8,25 +8,15 @@ import (
 )
 
 type OrderService struct {
-	orderRepo       repository.OrderRepository
-	customerRepo    repository.CustomerRepository
-	transactionRepo repository.TransactionRepository
+	order repository.OrderRepository
 }
 
 // NewOrderService initializes a new OrderService instance.
-func NewOrderService(
-	orderRepo repository.OrderRepository,
-	customerRepo repository.CustomerRepository,
-	transactionRepo repository.TransactionRepository,
-) *OrderService {
-	return &OrderService{
-		orderRepo:       orderRepo,
-		customerRepo:    customerRepo,
-		transactionRepo: transactionRepo,
-	}
+func NewOrderService(order repository.OrderRepository) *OrderService {
+	return &OrderService{order: order}
 }
 
 // PlaceOrder processes an order and returns the order ID.
 func (s *OrderService) PlaceOrder(ctx context.Context, order models.Order) (int, error) {
-	return s.orderRepo.InsertOrder(ctx, order)
+	return s.order.InsertOrder(ctx, order)
 }

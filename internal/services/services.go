@@ -15,7 +15,7 @@ type Services struct {
 func NewServices(repos *repository.Repositories) *Services {
 	return &Services{
 		CustomerService:    NewCustomerService(repos.Customer),
-		OrderService:       NewOrderService(repos.Order, repos.Customer, repos.Transaction),
+		OrderService:       NewOrderService(repos.Order),
 		TransactionService: NewTransactionService(repos.Transaction),
 	}
 }
