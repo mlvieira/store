@@ -12,6 +12,7 @@
     <span id="api_url" class="d-none">{{.API}}</span>
     <form action="/terminal/payment" method="POST" name="charge_form" id="charge_form" class="d-block needs-validation charge-form"
         autocomplete="off" novalidate>
+        <input type="hidden" name="payment_type" id="payment_mode" value="onetime">
     
         <div class="mb-3">
             <label for="amount" class="form-label">Amount</label>

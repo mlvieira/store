@@ -1,12 +1,14 @@
 let card;
+let apiUrl = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     const stripe = initializeStripe();
+    initGlobalConfig();
     setupFormListeners(stripe);
 });
 
 const initializeStripe = () => {
-    const pkey = document.getElementById('stripe_public_key')?.innerHTML;
+    const pkey = document.getElementById('stripe_public_key')?.innerText;
     if (!pkey) {
         showCardError('Failed to load payment processor. Please try again.');
         throw new Error('Stripe public key missing');
@@ -14,33 +16,42 @@ const initializeStripe = () => {
     return Stripe(pkey);
 };
 
+const initGlobalConfig = () => {
+    apiUrl = document.getElementById('api_url')?.innerText;
+    if (!apiUrl) {
+        showCardError('Failed to load API URL. Please try again.');
+        throw new Error('API URL missing');
+    }
+};
+
 const setupFormListeners = (stripe) => {
     const form = document.getElementById('charge_form');
+    const paymentMode = document.getElementById('payment_mode').value;
     const amountInput = document.getElementById('amount');
 
-    setupInputValidation(amountInput);
+    if (paymentMode !== 'subscription') {
+        setupInputValidation(amountInput);
+    }
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const amount = amountInput.value.trim();
+        const email = document.getElementById('email').value.trim();
 
-        if (!validateAmountInput(amount)) {
+        if (!validateEmail(email)) {
+            showCardError('Please provide a valid email.');
             return;
         }
 
-        const amountInCents = Math.round(amount * 100);
-
         toggleProcessingState(form, true);
         try {
-            const payload = {
-                amount: amountInCents,
-                currency: 'brl',
-            };
-
-            const clientSecret = await fetchPaymentIntent(payload);
-            await confirmPayment(stripe, clientSecret, form);
+            if (paymentMode === 'subscription') {
+                await handleSubscription(stripe, email, form);
+            } else {
+                await handleOneTimePayment(stripe, amountInput, form);
+            }
         } catch (err) {
-            showCardError(err);
+            console.error(err);
+            showCardError(err.message);
         } finally {
             toggleProcessingState(form, false);
         }
@@ -49,80 +60,108 @@ const setupFormListeners = (stripe) => {
     setupCardElements(stripe);
 };
 
-const setupInputValidation = (amountInput) => {
-    amountInput.addEventListener('input', () => {
-        amountInput.value = amountInput.value.replace(/[^0-9.]/g, '');
-        const parts = amountInput.value.split('.');
-        if (parts.length > 2) {
-            amountInput.value = parts[0] + '.' + parts[1];
-        }
-    });
+const handleSubscription = async (stripe, email, form) => {
+    const planId = document.getElementById('plan_id')?.value;
+    if (!planId) {
+        throw new Error('Plan ID is required for subscription.');
+    }
 
-    amountInput.addEventListener('blur', () => {
-        const value = parseFloat(amountInput.value);
-        if (!isNaN(value)) {
-            amountInput.value = value.toFixed(2);
-        } else {
-            amountInput.value = '';
-        }
-    });
+    const paymentMethod = await createPaymentMethod(stripe, email);
+
+    const clientSecret = await createSubscription(paymentMethod, email, planId);
+
+    await confirmPayment(stripe, clientSecret, form);
 };
 
-const validateAmountInput = (value) => {
-    const amount = parseFloat(value);
-    if (isNaN(amount) || amount <= 0) {
-        showCardError('Please enter a valid amount.');
-        return false;
+const handleOneTimePayment = async (stripe, amountInput, form) => {
+    if (!validateAmountInput(amountInput)) {
+        throw new Error('Invalid amount.');
     }
-    return true;
+
+    const amountInCents = Math.round(parseFloat(amountInput) * 100);
+
+    const clientSecret = await createPaymentIntent(amountInCents);
+
+    await confirmPayment(stripe, clientSecret, form);
 };
 
-const fetchPaymentIntent = async (payload) => {
-    const apiUrl = document.getElementById('api_url')?.innerHTML;
-    if (!apiUrl) {
-        showCardError('Failed to load API url. Please try again.');
+const createPaymentMethod = async (stripe, email) => {
+    const cardholderName = document.getElementById('cardholder-name').value;
+
+    const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: card,
+        billing_details: {
+            name: cardholderName,
+            email: email,
+        },
+    });
+
+    if (error) {
+        throw new Error(error.message);
+    }
+    return paymentMethod;
+};
+
+const createSubscription = async (paymentMethod, email, planId) => {
+    const payload = {
+        email: email,
+        plan_id: planId,
+        payment_method: paymentMethod.Id,
+        last_four: paymentMethod.last4,
+    };
+
+    const response = await fetch(`${apiUrl}/api/create-subscription`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
     }
 
-    try {
-        const response = await fetch(`${apiUrl}/api/payment-intent`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (!data.client_secret) {
-            throw new Error('Missing client_secret in response');
-        }
-
-        return data.client_secret;
-    } catch (err) {
-        console.error('Error fetching payment intent:', err);
-        showCardError('Failed to create payment intent.');
-        throw err;
+    const data = await response.json();
+    if (!data.client_secret) {
+        throw new Error('Missing client_secret in response');
     }
+
+    return data.client_secret;
+};
+
+const createPaymentIntent = async (amount) => {
+    const payload = {
+        amount: amount,
+        currency: 'brl',
+    };
+
+    const response = await fetch(`${apiUrl}/api/payment-intent`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.client_secret) {
+        throw new Error('Missing client_secret in response');
+    }
+
+    return data.client_secret;
 };
 
 const confirmPayment = async (stripe, clientSecret, form) => {
-    const cardholderName = document.getElementById('cardholder-name').value;
-
     try {
-        const result = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-                card,
-                billing_details: {
-                    name: cardholderName,
-                },
-            },
-        });
-
+        const result = await stripe.confirmCardPayment(clientSecret);
         if (result.error) {
             throw new Error(result.error.message);
         } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
@@ -130,6 +169,7 @@ const confirmPayment = async (stripe, clientSecret, form) => {
             setTimeout(() => form.submit(), 1000);
         }
     } catch (err) {
+        console.error(err);
         showCardError(err.message);
         throw err;
     }
@@ -168,6 +208,39 @@ const setupCardElements = (stripe) => {
     });
 };
 
+const validateAmountInput = (value) => {
+    const amount = parseFloat(value);
+    if (isNaN(amount) || amount <= 0) {
+        showCardError('Please enter a valid amount.');
+        return false;
+    }
+    return true;
+};
+
+const validateEmail = (email) => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
+};
+
+const setupInputValidation = (amountInput) => {
+    amountInput.addEventListener('input', () => {
+        amountInput.value = amountInput.value.replace(/[^0-9.]/g, '');
+        const parts = amountInput.value.split('.');
+        if (parts.length > 2) {
+            amountInput.value = parts[0] + '.' + parts[1];
+        }
+    });
+
+    amountInput.addEventListener('blur', () => {
+        const value = parseFloat(amountInput.value);
+        if (!isNaN(value)) {
+            amountInput.value = value.toFixed(2);
+        } else {
+            amountInput.value = '';
+        }
+    });
+};
+
 const toggleProcessingState = (form, isProcessing) => {
     const payButton = document.getElementById('pay-button');
     const processing = document.getElementById('processing-payment');
@@ -181,7 +254,6 @@ const toggleProcessingState = (form, isProcessing) => {
 
 const showCardError = (message) => {
     const cardMessages = document.getElementById('card-messages');
-    console.error('Error occurred:', message);
     cardMessages.classList.add('alert-danger');
     cardMessages.classList.remove('alert-success', 'd-none');
     cardMessages.innerText = message || 'An unexpected error occurred.';
@@ -191,5 +263,5 @@ const showCardSuccess = () => {
     const cardMessages = document.getElementById('card-messages');
     cardMessages.classList.add('alert-success');
     cardMessages.classList.remove('alert-danger', 'd-none');
-    cardMessages.innerText = 'Transaction successful!';
+    cardMessages.innerText = 'Payment successful!';
 };

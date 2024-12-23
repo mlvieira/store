@@ -68,3 +68,21 @@ func (h *APIHandlers) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, widget, h.App.ErrorLog)
 }
+
+// CreateSubscription creates a subscription for a product
+func (h *APIHandlers) CreateSubscription(w http.ResponseWriter, r *http.Request) {
+	var payload stripePayload
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
+
+	h.App.InfoLog.Println(payload.Email, payload.LastFour, payload.PaymentMethod, payload.PlanID)
+
+	pi := jsonResponse{
+		OK:      true,
+		Message: "T",
+	}
+	writeJSON(w, http.StatusOK, pi, h.App.ErrorLog)
+}

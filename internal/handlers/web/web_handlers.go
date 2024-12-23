@@ -263,3 +263,22 @@ func (h *WebHandlers) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 		h.App.ErrorLog.Println(err)
 	}
 }
+
+// BronzePlan renders the page of bronze subscription
+func (h *WebHandlers) BronzePlan(w http.ResponseWriter, r *http.Request) {
+	widget, err := h.App.Repositories.Widget.GetWidgetByID(r.Context(), 2)
+	if err != nil {
+		h.App.ErrorLog.Println(err)
+		return
+	}
+
+	data := map[string]any{
+		"widget": widget,
+	}
+
+	if err := h.App.Renderer.RenderTemplate(w, r, "bronze-plan", &render.TemplateData{
+		Data: data,
+	}); err != nil {
+		h.App.ErrorLog.Println(err)
+	}
+}

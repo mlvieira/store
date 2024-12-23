@@ -17,6 +17,7 @@ func InitAPIRoutes(baseHandlers *handlers.Handlers) http.Handler {
 	mux.Route("/api", func(r chi.Router) {
 		r.Post("/payment-intent", apiHandlers.GetPaymentIntent)
 		r.Get("/widget/{id}", apiHandlers.GetWidgetByID)
+		r.Post("/create-subscription", apiHandlers.CreateSubscription)
 	})
 
 	return mux

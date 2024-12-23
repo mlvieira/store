@@ -27,7 +27,8 @@ func (r *widgetRepo) GetWidgetByID(ctx context.Context, id int) (models.Widget, 
 
 	stmt := `
 		SELECT id, name, description, inventory_level, price, 
-		       COALESCE(image, '') AS image, created_at, updated_at
+		       COALESCE(image, '') AS image, is_recurring, plan_id,
+			   created_at, updated_at
 		FROM widgets
 		WHERE id = ?
 	`
@@ -40,6 +41,8 @@ func (r *widgetRepo) GetWidgetByID(ctx context.Context, id int) (models.Widget, 
 		&widget.InventoryLevel,
 		&widget.Price,
 		&widget.Image,
+		&widget.IsRecurring,
+		&widget.PlanID,
 		&widget.CreatedAt,
 		&widget.UpdatedAt,
 	); err != nil {

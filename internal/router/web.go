@@ -21,6 +21,10 @@ func InitWebRoutes(baseHandlers *handlers.Handlers, scs *scs.SessionManager) htt
 	mux.Get("/", webHandlers.Homepage)
 	mux.Get("/widget/{id}", webHandlers.ChargeOnce)
 
+	mux.Route("/plans", func(r chi.Router) {
+		r.Get("/bronze", webHandlers.BronzePlan)
+	})
+
 	mux.Route("/payment", func(r chi.Router) {
 		r.Post("/", webHandlers.PaymentSucceeded)
 		r.Get("/receipt", webHandlers.Receipt)
