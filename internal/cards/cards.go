@@ -5,8 +5,10 @@ import (
 
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/charge"
+	"github.com/stripe/stripe-go/v81/customer"
 	"github.com/stripe/stripe-go/v81/paymentintent"
 	"github.com/stripe/stripe-go/v81/paymentmethod"
+	"github.com/stripe/stripe-go/v81/subscription"
 )
 
 // Card represents payment card details for transactions.
@@ -96,6 +98,54 @@ func (c *Card) RetrieveChargeID(paymentIntentID string) (string, error) {
 	}
 
 	return "", errors.New("no charges found for this PaymentIntent")
+}
+
+// CreateCustomer creates a customer in Stripe
+func (c *Card) CreateCustomer(pm, email string) (*stripe.Customer, string, error) {
+	stripe.Key = c.Secret
+
+	params := &stripe.CustomerParams{
+		PaymentMethod: stripe.String(pm),
+		Email:         stripe.String(email),
+		InvoiceSettings: &stripe.CustomerInvoiceSettingsParams{
+			DefaultPaymentMethod: stripe.String(pm),
+		},
+	}
+
+	cust, err := customer.New(params)
+	if err != nil {
+		msg := ""
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			msg = cardErrorMessage(stripeErr.Code)
+		}
+
+		return nil, msg, err
+	}
+
+	return cust, "", nil
+}
+
+// SubscribeToPlan subscribes a customer to a Stripe plan
+func (c *Card) SubscribeToPlan(cust *stripe.Customer, plan, email, last4, cardType string) (string, error) {
+	stripeCustomerID := cust.ID
+	items := []*stripe.SubscriptionItemsParams{
+		{Plan: stripe.String(plan)},
+	}
+
+	params := &stripe.SubscriptionParams{
+		Customer: stripe.String(stripeCustomerID),
+		Items:    items,
+	}
+
+	params.AddMetadata("last_four", last4)
+	params.AddMetadata("card_type", cardType)
+	params.AddExpand("latest_invoice.payment_intent")
+
+	sub, err := subscription.New(params)
+	if err != nil {
+		return "", err
+	}
+	return sub.ID, nil
 }
 
 // cardErrorMessage maps Stripe error codes to user-friendly error messages.
