@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/store/internal/cards"
 	"github.com/mlvieira/store/internal/handlers"
+	"github.com/mlvieira/store/internal/models"
+	"github.com/stripe/stripe-go/v81"
 )
 
 // APIHandlers embeds the shared Handlers to provide API-specific handlers.
@@ -80,9 +82,115 @@ func (h *APIHandlers) CreateSubscription(w http.ResponseWriter, r *http.Request)
 
 	h.App.InfoLog.Println(payload.Email, payload.LastFour, payload.PaymentMethod, payload.PlanID)
 
-	pi := jsonResponse{
-		OK:      true,
-		Message: "T",
+	card := cards.Card{
+		Secret:   h.App.Config.Stripe.Secret,
+		Key:      h.App.Config.Stripe.Key,
+		Currency: payload.Currency,
 	}
-	writeJSON(w, http.StatusOK, pi, h.App.ErrorLog)
+
+	var subscription *stripe.Subscription
+
+	stripeCustomer, msg, err := card.CreateCustomer(payload.PaymentMethod, payload.Email)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: msg,
+		}, h.App.ErrorLog)
+		return
+	}
+
+	sp, msg, err := card.CreateSetupIntent(stripeCustomer.ID, payload.PaymentMethod)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: msg,
+		}, h.App.ErrorLog)
+		return
+	}
+
+	subscription, err = card.SubscribeToPlan(stripeCustomer, payload.PlanID, payload.Email, payload.LastFour, "")
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error while subscribing to plan",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	h.App.InfoLog.Println(subscription.ID)
+
+	productID, err := strconv.Atoi(payload.ProductID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error converting product ID",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	cust := models.Customer{
+		FirstName: payload.FirstName,
+		LastName:  payload.LastName,
+		Email:     payload.Email,
+	}
+
+	customerID, err := h.App.Services.CustomerService.SaveCustomer(r.Context(), cust)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error saving customer",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	widget, err := h.App.Repositories.Widget.GetWidgetByID(r.Context(), productID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error getting product info",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	txn := models.Transaction{
+		Amount:              widget.Price,
+		Currency:            payload.Currency,
+		LastFour:            payload.LastFour,
+		ExpiryMonth:         payload.ExpiryMonth,
+		ExpiryYear:          payload.ExpiryYear,
+		TransactionStatusID: 2,
+	}
+
+	txnID, err := h.App.Services.TransactionService.SaveTransaction(r.Context(), txn)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error saving transaction",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	order := models.Order{
+		WidgetID:      widget.ID,
+		TransactionID: txnID,
+		CustomerID:    customerID,
+		StatusID:      1,
+		Quantity:      1,
+		Amount:        widget.Price,
+	}
+
+	_, err = h.App.Services.OrderService.PlaceOrder(r.Context(), order)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, jsonResponse{
+			OK:      false,
+			Message: "Error saving order",
+		}, h.App.ErrorLog)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, jsonResponse{
+		OK:      true,
+		Message: "Transaction successful",
+		Content: sp.ClientSecret,
+	}, h.App.InfoLog)
 }

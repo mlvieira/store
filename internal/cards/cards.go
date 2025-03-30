@@ -8,6 +8,7 @@ import (
 	"github.com/stripe/stripe-go/v81/customer"
 	"github.com/stripe/stripe-go/v81/paymentintent"
 	"github.com/stripe/stripe-go/v81/paymentmethod"
+	"github.com/stripe/stripe-go/v81/setupintent"
 	"github.com/stripe/stripe-go/v81/subscription"
 )
 
@@ -52,6 +53,34 @@ func (c *Card) CreatePaymentIntent(currency string, amount int64) (*stripe.Payme
 	}
 
 	return pi, "", nil
+}
+
+// CreateSetupIntent generates a Stripe SetupIntent to save payment details for future use.
+func (c *Card) CreateSetupIntent(customerID string, paymentMethodID string) (*stripe.SetupIntent, string, error) {
+	stripe.Key = c.Secret
+
+	params := &stripe.SetupIntentParams{
+		Customer: stripe.String(customerID),
+		PaymentMethodTypes: stripe.StringSlice([]string{
+			"card",
+		}),
+		Usage: stripe.String(string(stripe.SetupIntentUsageOffSession)),
+	}
+
+	if paymentMethodID != "" {
+		params.PaymentMethod = stripe.String(paymentMethodID)
+	}
+
+	si, err := setupintent.New(params)
+	if err != nil {
+		msg := ""
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			msg = cardErrorMessage(stripeErr.Code)
+		}
+		return nil, msg, err
+	}
+
+	return si, "", nil
 }
 
 // GetPaymentMethod gets the payment method by payment intent id
@@ -126,7 +155,7 @@ func (c *Card) CreateCustomer(pm, email string) (*stripe.Customer, string, error
 }
 
 // SubscribeToPlan subscribes a customer to a Stripe plan
-func (c *Card) SubscribeToPlan(cust *stripe.Customer, plan, email, last4, cardType string) (string, error) {
+func (c *Card) SubscribeToPlan(cust *stripe.Customer, plan, email, last4, cardType string) (*stripe.Subscription, error) {
 	stripeCustomerID := cust.ID
 	items := []*stripe.SubscriptionItemsParams{
 		{Plan: stripe.String(plan)},
@@ -143,9 +172,9 @@ func (c *Card) SubscribeToPlan(cust *stripe.Customer, plan, email, last4, cardTy
 
 	sub, err := subscription.New(params)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return sub.ID, nil
+	return sub, nil
 }
 
 // cardErrorMessage maps Stripe error codes to user-friendly error messages.

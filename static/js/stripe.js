@@ -42,16 +42,51 @@ const setupFormListeners = (stripe) => {
             return;
         }
 
+        if (
+            paymentMode !== 'subscription' &&
+            !validateAmountInput(amountInput.value)
+        ) {
+            return;
+        }
+
         toggleProcessingState(form, true);
         try {
+            const paymentMethod = await createPaymentMethod(stripe, email);
+            let clientSecret;
+
             if (paymentMode === 'subscription') {
-                await handleSubscription(stripe, email, form);
+                const planId = document.getElementById('plan_id')?.value;
+                if (!planId) {
+                    throw new Error('Plan ID is required for subscription.');
+                }
+                clientSecret = await createSubscription(
+                    paymentMethod,
+                    email,
+                    planId,
+                    amountInput
+                );
             } else {
-                await handleOneTimePayment(stripe, amountInput, form);
+                const amountInCents = Math.round(
+                    parseFloat(amountInput.value) * 100
+                );
+                clientSecret = await createPaymentIntent(
+                    amountInCents,
+                    paymentMethod.id
+                );
             }
+
+            await confirmIntent(
+                stripe,
+                clientSecret,
+                form,
+                paymentMethod.id,
+                paymentMode
+            );
         } catch (err) {
-            console.error(err);
-            showCardError(err.message);
+            console.error('Form submission error:', err);
+            showCardError(
+                err.message || 'An unexpected error occurred.'
+            );
         } finally {
             toggleProcessingState(form, false);
         }
@@ -60,128 +95,210 @@ const setupFormListeners = (stripe) => {
     setupCardElements(stripe);
 };
 
-const handleSubscription = async (stripe, email, form) => {
-    const planId = document.getElementById('plan_id')?.value;
-    if (!planId) {
-        throw new Error('Plan ID is required for subscription.');
-    }
-
-    const paymentMethod = await createPaymentMethod(stripe, email);
-
-    const clientSecret = await createSubscription(paymentMethod, email, planId);
-
-    await confirmPayment(stripe, clientSecret, form);
-};
-
-const handleOneTimePayment = async (stripe, amountInput, form) => {
-    if (!validateAmountInput(amountInput)) {
-        throw new Error('Invalid amount.');
-    }
-
-    const amountInCents = Math.round(parseFloat(amountInput) * 100);
-
-    const clientSecret = await createPaymentIntent(amountInCents);
-
-    await confirmPayment(stripe, clientSecret, form);
-};
-
 const createPaymentMethod = async (stripe, email) => {
-    const cardholderName = document.getElementById('cardholder-name').value;
-
     const { paymentMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
         card: card,
         billing_details: {
-            name: cardholderName,
             email: email,
         },
     });
 
     if (error) {
+        console.error('createPaymentMethod error:', error);
         throw new Error(error.message);
     }
     return paymentMethod;
 };
 
-const createSubscription = async (paymentMethod, email, planId) => {
+const createSubscription = async (
+    paymentMethod,
+    email,
+    planId,
+    amountInput
+) => {
     const payload = {
         email: email,
         plan_id: planId,
-        payment_method: paymentMethod.Id,
-        last_four: paymentMethod.last4,
+        payment_method: paymentMethod.id,
+        last_four: paymentMethod.card.last4,
+        card_brand: paymentMethod.card.brand,
+        expiry_month: paymentMethod.card.exp_month,
+        expiry_year: paymentMethod.card.exp_year,
+        first_name: document.querySelector('#first-name').value,
+        last_name: document.querySelector('#last-name').value,
+        product_id: document.querySelector('input[name="widget_id"]').value,
+        currency: 'brl',
+        amount: Math.round(parseFloat(amountInput.value) * 100),
     };
 
+    console.log('Sending payload to create subscription:', payload);
     const response = await fetch(`${apiUrl}/api/create-subscription`, {
         method: 'POST',
         headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
     });
 
+    console.log('Create Subscription Response Status:', response.status);
     if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Create Subscription Error Response:', errorText);
+        throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    if (!data.client_secret) {
-        throw new Error('Missing client_secret in response');
+    console.log('Create Subscription Response Data:', data);
+    if (!data.content) {
+        console.error(
+            'Missing client_secret (expected in content field) in subscription response:',
+            data
+        );
+        throw new Error('Missing client_secret for setup in response');
     }
 
-    return data.client_secret;
+    return data.content;
 };
 
-const createPaymentIntent = async (amount) => {
+const createPaymentIntent = async (amount, paymentMethodId) => {
     const payload = {
         amount: amount,
         currency: 'brl',
+        payment_method: paymentMethodId,
     };
 
+    console.log('Sending payload to create PI:', payload);
     const response = await fetch(`${apiUrl}/api/payment-intent`, {
         method: 'POST',
         headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
     });
 
+    console.log('Create PI Response Status:', response.status);
     if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Create PI Error Response:', errorText);
+        throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Create PI Response Data:', data);
     if (!data.client_secret) {
+        console.error(
+            'Missing client_secret in payment intent response:',
+            data
+        );
         throw new Error('Missing client_secret in response');
     }
 
     return data.client_secret;
 };
 
-const confirmPayment = async (stripe, clientSecret, form) => {
-    try {
-        const result = await stripe.confirmCardPayment(clientSecret);
-        if (result.error) {
-            throw new Error(result.error.message);
-        } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-            processPaymentSuccess(result.paymentIntent);
-            setTimeout(() => form.submit(), 1000);
-        }
-    } catch (err) {
-        console.error(err);
-        showCardError(err.message);
-        throw err;
+const confirmIntent = async (
+    stripe,
+    clientSecret,
+    form,
+    paymentMethodId,
+    paymentMode
+) => {
+    let confirmationPromise;
+
+    if (paymentMode !== 'subscription') {
+        console.log(
+            'Attempting confirmCardPayment with clientSecret:',
+            clientSecret,
+            'and paymentMethodId:',
+            paymentMethodId
+        );
+        confirmationPromise = stripe.confirmCardPayment(clientSecret, {
+            payment_method: paymentMethodId,
+        });
+    } else {
+        console.log(
+            'Attempting confirmCardSetup with clientSecret:',
+            clientSecret,
+            'and paymentMethodId:',
+            paymentMethodId
+        );
+        confirmationPromise = stripe.confirmCardSetup(clientSecret, {
+            payment_method: paymentMethodId,
+        });
     }
+
+    const result = await confirmationPromise;
+    console.log('Stripe confirmation result:', result);
+
+    if (result.error) {
+        console.error('Stripe confirmation error:', result.error);
+        throw new Error(result.error.message);
+    }
+
+    let intent = null;
+    if (
+        result.paymentIntent &&
+        result.paymentIntent.status === 'succeeded'
+    ) {
+        console.log('PaymentIntent Succeeded:', result.paymentIntent);
+        intent = result.paymentIntent;
+    } else if (
+        result.setupIntent &&
+        result.setupIntent.status === 'succeeded'
+    ) {
+        console.log('SetupIntent Succeeded:', result.setupIntent);
+        intent = result.setupIntent;
+    } else {
+        const status =
+            result.paymentIntent?.status ||
+            result.setupIntent?.status ||
+            'unknown';
+        const intentType = result.paymentIntent ? 'Payment' : 'Setup';
+        console.warn(`Unhandled ${intentType}Intent status: ${status}`, result);
+        throw new Error(
+            `Payment/Setup status: ${status}. Further action may be required.`
+        );
+    }
+
+    processPaymentSuccess(intent);
+    setTimeout(() => {
+        console.log('Submitting form after success.');
+        form.submit();
+    }, 1000);
 };
 
-const processPaymentSuccess = (paymentIntent) => {
-    document.getElementById('payment_method').value = paymentIntent.payment_method;
-    document.getElementById('payment_intent').value = paymentIntent.id;
-    document.getElementById('payment_amount').value = paymentIntent.amount;
-    document.getElementById('payment_currency').value = paymentIntent.currency;
-
+const processPaymentSuccess = (intent) => {
+    console.log('Processing success for intent:', intent);
     showCardSuccess();
+
+    const paymentMethodInput = document.getElementById('payment_method');
+    if (paymentMethodInput && intent.payment_method) {
+        paymentMethodInput.value =
+            typeof intent.payment_method === 'string'
+                ? intent.payment_method
+                : intent.payment_method.id;
+    }
+
+    const intentIdInput = document.getElementById('intent_id');
+    if (intentIdInput) {
+        intentIdInput.value = intent.id;
+    }
+
+    const amountInput = document.getElementById('payment_amount');
+    const currencyInput = document.getElementById('payment_currency');
+
+    if (intent.object === 'payment_intent') {
+        console.log('Processing PaymentIntent specific data');
+        if (amountInput) amountInput.value = intent.amount;
+        if (currencyInput) currencyInput.value = intent.currency;
+    } else if (intent.object === 'setup_intent') {
+        console.log('Processing SetupIntent specific data');
+        if (amountInput) amountInput.value = ''; // Or 0
+        if (currencyInput) currencyInput.value = '';
+    }
 };
 
 const setupCardElements = (stripe) => {
@@ -245,15 +362,19 @@ const toggleProcessingState = (form, isProcessing) => {
     const payButton = document.getElementById('pay-button');
     const processing = document.getElementById('processing-payment');
 
-    payButton.disabled = isProcessing;
-    processing.classList.toggle('d-none', !isProcessing);
+    if (payButton) payButton.disabled = isProcessing;
+    if (processing) processing.classList.toggle('d-none', !isProcessing);
+
     form.querySelectorAll('input, button').forEach((element) => {
-        element.disabled = isProcessing;
+        if (element.id !== 'card-element' && !element.closest('#card-element')) {
+             element.disabled = isProcessing;
+        }
     });
 };
 
 const showCardError = (message) => {
     const cardMessages = document.getElementById('card-messages');
+    if (!cardMessages) return;
     cardMessages.classList.add('alert-danger');
     cardMessages.classList.remove('alert-success', 'd-none');
     cardMessages.innerText = message || 'An unexpected error occurred.';
@@ -261,6 +382,7 @@ const showCardError = (message) => {
 
 const showCardSuccess = () => {
     const cardMessages = document.getElementById('card-messages');
+    if (!cardMessages) return;
     cardMessages.classList.add('alert-success');
     cardMessages.classList.remove('alert-danger', 'd-none');
     cardMessages.innerText = 'Payment successful!';

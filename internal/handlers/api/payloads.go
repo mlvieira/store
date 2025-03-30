@@ -9,8 +9,8 @@ type stripePayload struct {
 	LastFour      string `json:"last_four"`
 	PlanID        string `json:"plan_id"`
 	CardBrand     string `json:"card_brand"`
-	ExpiryMonth   string `json:"expiry_month"`
-	ExpiryYear    string `json:"expiry_year"`
+	ExpiryMonth   int    `json:"expiry_month"`
+	ExpiryYear    int    `json:"expiry_year"`
 	ProductID     string `json:"product_id"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
